@@ -4,27 +4,6 @@
 ###############################################################################
 
 
-#' open street map (and google) mercator projection
-osm <- function(){
-	CRS("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs")
-}
-
-#'maps long lat values to the open street map mercator projection
-#' @param lat a vector of latitudes
-#' @param long a vector of longitudes
-#' @param drop drop to lowest dimension
-project_mercator <- function(lat,long,drop=TRUE){
-	df <- data.frame(long=long,lat=lat)
-	coordinates(df) <- ~long+lat
-	proj4string(df) <- CRS("+proj=longlat +datum=NAD83")
-	df1 <- spTransform(df,osm())
-	coords <- coordinates(df1)
-	colnames(coords) <- c("x","y")
-	if(drop)
-		coords <- drop(coords)
-	coords
-}
-
 
 #'plot spatial points with colors
 #' @param x a SpatialPointsDataFrame
@@ -49,7 +28,7 @@ colored_points<-function(x, color_var, pch=1, legend.loc="bottomleft",
 		cv <- color_var - min(color_var,na.rm=TRUE)
 		cv <- cv/max(cv,na.rm=TRUE)
 		cv <- ceiling(cv*99)+1
-		clrs <- rev(heat_hcl(100, h = c(0, 90), c = c(100, 30), l = c(50, 90), power = c(1/5, 1)))
+		clrs <- rev(heat_hcl(100, h = c(0, 90), c. = c(100, 30), l = c(50, 90), power = c(1/5, 1)))
 		repl <- clrs[cv]
 		leg.col <- clrs[c(1,25,50,100)]
 		leg.val <- c(.01,.25,.50,1)*(max(color_var,na.rm=TRUE)-min(color_var,na.rm=TRUE)) + min(color_var,na.rm=TRUE)
@@ -87,6 +66,18 @@ bubble_plot <- function(x,z,minRadius=.01,
 #' @param x a spatial data frame (points or polygon
 #' @param text the labels
 #' @param ... additional parameters for text
+#' @examples \dontrun{
+#' library(rgdal)
+#' data(LA_places)
+#' plot.new()
+#' par(mar=c(.5,.5,2.25,.5), oma=c(1,1,1,1))
+#' plot.window(c(-1.3160249151515616E7,-1.3155204307648793E7),c(3992993.9205893227,3996691.5618326175), xaxs = 'i', yaxs = 'i')
+#' plot(openmap(c(33.760525217369974,-118.22052955627441),c(33.73290566922855,-118.17521095275879),14,'bing'),add=TRUE)
+#' plot(x = LA_places,add = TRUE,pch = 16.0,col = '#e00700')
+#' text_plot(LA_places,text = slot(LA_places,"data")[,'NAME'],adj = 0.0,col = '#fff7f9')
+#' title('Long Beach Terminal')
+#' }
+
 text_plot <- function(x,text,...){
 	coord <- coordinates(x)
 	text(coord[,1],coord[,2],text,...)
@@ -104,6 +95,19 @@ text_plot <- function(x,text,...){
 #' @param legend.title title
 #' @param add add to current plor
 #' @param ... additional parameters for plot
+#' @examples \dontrun{
+#' library(UScensus2000)
+#' 
+#' lat <- c(43.834526782236814,30.334953881988564)
+#' lon <- c(-131.0888671875  ,-107.8857421875)
+#' southwest <- openmap(c(lat[1],lon[1]),c(lat[2],lon[2]),5,'bing')
+#' data(california.tract)
+#' california.tract <- spTransform(california.tract,osm())
+#' 
+#' plot(southwest,removeMargin=TRUE)
+#' choro_plot(california.tract,dem = slot(california.tract,"data")[,'med.age'],
+#' 		legend.title = 'Median Age',alpha=1)
+#' }
 choro_plot <- function (sp, dem , cuts = list("quantile", seq(0, 
 						1, 0.25)), alpha=.5,
 		main = NULL, sub = "", legend.loc = "bottomleft", 
@@ -142,105 +146,5 @@ choro_plot <- function (sp, dem , cuts = list("quantile", seq(0,
 			bty = "o", title = legend.title, bg = "white")
 }
 
-.containedBy <- function (minLat, minLon, maxLat, maxLon, coords) {
-	minMerc <- project_mercator(minLat, minLon)
-	maxMerc <- project_mercator(maxLat, maxLon)
-	
-	#print(minMerc)
-	#print(maxMerc)
-	
-	minLat <- minMerc[[1]]
-	maxLat <- maxMerc[[1]]
-	
-	minLon <- minMerc[[2]]
-	maxLon <- maxMerc[[2]]
-	
-	for (i in 1:dim(coords)[[1]]) { 
-		lat <- coords[i, 1] 
-		lon <- coords[i, 2]
-		if (!( lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon)) {
-			return(FALSE)
-		}
-	}
-	return(TRUE)
-}
 
-#Used for rectangle subsetting
-#Returns true if *ALL* of the coords are contained by the rectangle
-.containedBy2 <- function (minMerc, maxMerc, coords) {
-	minLat <- minMerc[[1]]
-	maxLat <- maxMerc[[1]]
-	minLon <- minMerc[[2]]
-	maxLon <- maxMerc[[2]]
-	all(coords[,1] >= minLat & coords[,1] <= maxLat & coords[,2] >= minLon & coords[,2] <= maxLon)
-}
-
-#For Polygons
-#TODO handle error when no polys left.  Probably should do nothing.
-#TODO These following functions could likely be consolidated
-.subsetPoly <- function (minLat, minLon, maxLat, maxLon, polyDf, removeSelection) {
-	minMerc <- project_mercator(minLat, minLon)
-	maxMerc <- project_mercator(maxLat, maxLon)
-	# The XOR inverts the function in any easy way w/o if/else statements
-	.contained <- function(poly){return(xor(!removeSelection, .containedBy2(minMerc, maxMerc, poly)))}
-	
-	nr <- nrow(polyDf)
-	indices <- rep(FALSE,nr)
-	
-	for (i in 1:nr){
-			indices[i] <- .contained(t(polyDf[i,]@bbox)) 
-	}
-	
-	if(all(!indices))
-		return(NULL)
-	polyDf[indices,]
-}
-
-.subsetLines <- function (minLat, minLon, maxLat, maxLon, polyDf, removeSelection) {
-	# The XOR inverts the function in any easy way w/o if/else statements
-	.contained <- function(poly){return(xor(!removeSelection, .containedBy(minLat, minLon, maxLat, maxLon, poly@coords)))}
-	
-	dupDf <- polyDf
-	
-	for (i in 1:length(polyDf@lines)){# each list of polygons
-		dupDf@lines[[i]]@Lines <- Filter(.contained, polyDf@lines[[i]]@Lines)
-		#.containedBy(minLat, minLon, maxLat, maxLon, poly@coords)
-	}
-	
-	indices <- 1:length(polyDf)
-	indices <- Filter(function(x){return(length(dupDf@lines[[x]]@Lines) > 0)}, indices)
-	if (length(indices) == 0)
-	{
-		return(NULL)
-	}
-	else
-	{
-		dupDf <- polyDf[indices, ]
-		return(dupDf)
-	}
-}
-
-.subsetPoints <- function (minLat, minLon, maxLat, maxLon, pointsDf, removeSelection) {
-	
-	dupDf <- pointsDf
-	
-	.contained <- function(x) {
-		return(xor(!removeSelection, .containedBy(minLat, minLon, maxLat, maxLon, dupDf[x,]@coords) ) )
-	}
-	
-	indices <- 1:length(pointsDf)
-	indices <- Filter(.contained, indices)
-	
-	if (length(indices) == 0)
-	{
-		return(NULL)
-	}
-	else
-	{
-		dupDf <- pointsDf[indices, ]
-		return(dupDf)	
-	}
-}
-
-#states@data <- states@data[44,,drop=F]
 

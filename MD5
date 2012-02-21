@@ -1,11 +1,11 @@
-10f26cc4ae87e812c2710d4916109218 *DESCRIPTION
+b6cb9a98cb0db8b790cca01cdabeca98 *DESCRIPTION
 42b6f3e14a26a53ce6ae560eadaf976e *NAMESPACE
 62044983fb4405eaf4a5a1f43a48ac81 *R/DeducerSpatial-package.R
 6a0befd796688e8e7ab27bbc4a635625 *R/census.R
-27ee8efc848bc401eb3912ec3bf8a0d0 *R/plot-util.R
+e95c2aaea3ce5c18b8e080bb24824392 *R/plot-util.R
 6e85189ca466b484c750f1e735a9d74c *R/zzz.R
-cc705084c314daf3378f5cfee7a84a7d *inst/java/jgd.jar
-c6ecbd3cc386cd0311d5924219aa5088 *inst/java/spatial.jar
+d612ee670bdeb8a31890ec3ecb0351f8 *inst/java/jgd.jar
+04886d145faa12dbc7a6e722384307c8 *inst/java/spatial.jar
 89694b6620648598decd299c269b3714 *man/DeducerSpatial-package.Rd
 1f7fd553c734b43cb9dbb4ff382bbe11 *man/loadCensusData.Rd
 ff7dd1f58d6020aceb74f6918e4b4848 *man/spatialBubblePlot.Rd

@@ -3,7 +3,7 @@
 \title{load 200 or 2010 census data}
 \usage{
 loadCensusData(state,level=c("county","tract","blkgrp","blk","cdp"),
-		year=c("2010","2000"), verbose=TRUE, osmTransform=TRUE)
+		year=c("2010","2000"), verbose=TRUE, osmTransform=TRUE, envir = .GlobalEnv)
 }
 \arguments{
   \item{state}{the name of the state (lower case)}
@@ -15,6 +15,8 @@ loadCensusData(state,level=c("county","tract","blkgrp","blk","cdp"),
   \item{verbose}{how verbose to be}
   
   \item{osmTransform}{should data be loaded in the OpenStreetMaps mercator projection}
+  
+  \item{envir}{the environment where the data should be loaded}
 
 }
 \description{

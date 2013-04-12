@@ -5,13 +5,15 @@
 
 
 loadCensusData <- function(state,level=c("county","tract","blkgrp","blk","cdp"),
-		year=c("2010","2000"), verbose=TRUE, osmTransform=TRUE){
+		year=c("2010","2000"), verbose=TRUE, osmTransform=TRUE, envir = .GlobalEnv){
 	level <- match.arg(level)
 	year <- match.arg(year)
 	pkg <- paste("UScensus",year,level,sep="")
 	if(year=="2000" && level=="county")
 		stop("County level data not available for the 2000 census")
-	if(!require(pkg,character.only=TRUE)){
+	if(!suppressWarnings(require(pkg,character.only=TRUE))){
+		if(year=="2010")
+			library("UScensus2010")
 		if(verbose)
 			cat(pkg," not found. Installing (This may take some time)...\n")
 		os <- if(length(grep("^darwin",R.version$os))>0)
@@ -30,9 +32,9 @@ loadCensusData <- function(state,level=c("county","tract","blkgrp","blk","cdp"),
 	dataName <- paste(state,".",level,if(year=="2010") "10" else "",sep="")
 	if(verbose)
 		cat("Loading: ",dataName,"\n")
-	data(list=dataName)
+	data(list=dataName,envir=envir)
 	if(osmTransform)
-		eval(parse(text=paste(dataName,"<-spTransform(",dataName,",CRS=osm())")),envir=.GlobalEnv)
+		eval(parse(text=paste(dataName,"<-spTransform(",dataName,",CRS=osm())")),envir=envir)
 }
 
 
